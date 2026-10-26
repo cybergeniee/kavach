@@ -49,6 +49,48 @@
       <button class="go" id="go">Start listening</button>
     </div>
 
+    <section class="guide" id="guide" aria-labelledby="guide-title">
+      <div class="guide-head">
+        <h2 id="guide-title">Try Kavach in one minute</h2>
+        <p>Kavach listens to a phone call and warns an elderly person, out loud and in their own language, the moment the call turns into a scam. Pick any test below.</p>
+      </div>
+
+      <div class="guide-grid">
+        <div class="card guide-block">
+          <h3>Play a recorded call</h3>
+          <p class="hint">Plays through your speakers and runs through the live system. Turn your volume up.</p>
+          <ul class="tries">
+            <li><div><b>“Digital arrest” scam</b><span>Hinglish · fake police, drugs parcel, asks for OTP. Red alarm in about 10 seconds.</span></div><button class="btn blue" data-demo="digital_arrest_hinglish" data-lang="hi-IN">Play</button></li>
+            <li><div><b>Fake bank KYC scam</b><span>Tamil · warning is spoken in Tamil.</span></div><button class="btn blue" data-demo="kyc_tamil" data-lang="ta-IN">Play</button></li>
+            <li><div><b>Customs parcel scam</b><span>English · fake FedEx and CBI, asks for a fee.</span></div><button class="btn blue" data-demo="customs_english" data-lang="en-IN">Play</button></li>
+            <li><div><b>Grandson calling</b><span>Hinglish · a normal family call. Stays green, no alarm.</span></div><button class="btn" data-demo="safe_grandson" data-lang="hi-IN">Play</button></li>
+          </ul>
+        </div>
+
+        <div class="card guide-block">
+          <h3>Test it with your own voice</h3>
+          <p class="hint">Choose <b>Live call</b>, press <b>Start listening</b>, allow the microphone, and read one of these aloud. Or put a real call on speaker.</p>
+          <ul class="lines">
+            <li><span class="tag-scam">Scam</span>“Main Mumbai crime branch se bol raha hoon. Aapke Aadhaar se drugs ka parcel mila hai. Aap digital arrest mein hain, kisi ko mat batana. Abhi OTP batao.”</li>
+            <li><span class="tag-safe">Not a scam</span>“Main Thane police station se bol raha hoon. Passport verification ke liye kal documents leke thane aa jaiye.” <em>Real police can call too: this stays green or amber, never red.</em></li>
+            <li><span class="tag-safe">Not a scam</span>“Hello Dadi, main Rohan. Kal milne aaunga. Aapne dawai li?”</li>
+            <li><span class="tag-scam">Scam</span>“Congratulations, you won 25 lakh in KBC. Send 12,000 processing fee on UPI to claim it.”</li>
+          </ul>
+          <p class="hint">Press <b>Stop and get report</b> at the end for a spoken summary and next steps.</p>
+        </div>
+
+        <div class="card guide-block guide-phone">
+          <div>
+            <h3>Open it on your phone</h3>
+            <p>Scan to open Kavach on a phone. Use Chrome or Safari and allow the microphone. Put a call on speaker next to it, or play a recorded call.</p>
+            <h3 style="margin-top:20px">Watch as family</h3>
+            <p>While a call is running, tap <b>Family code</b> at the top and scan it with a second phone. The family sees the transcript, the meter and the alarm live.</p>
+          </div>
+          <div class="qr" id="site-qr" aria-label="QR code to open Kavach on a phone"></div>
+        </div>
+      </div>
+    </section>
+
     <div id="dashboard"></div>
 
     <section class="history hidden" id="history">

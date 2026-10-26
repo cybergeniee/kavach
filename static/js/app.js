@@ -62,6 +62,7 @@ function wsUrl(path) {
 async function start() {
   if (running) return;
   running = true;
+  showGuide(false);
   ui.reset();
   ui.setLang(langSel.value);
   $("go").disabled = true;
@@ -188,6 +189,10 @@ function cleanup() {
   setStatus("Ready");
   setGo(false);
 }
+// Guide comes back once the report is closed, so the next tester sees it.
+document.addEventListener("click", (e) => {
+  if (!running && e.target.closest?.(".modal-bg.report [data-a='close']")) showGuide(true);
+});
 
 function setGo(isRunning) {
   const go = $("go");
@@ -197,6 +202,26 @@ function setGo(isRunning) {
 }
 
 $("go").onclick = () => (running ? stop() : start());
+
+// ---- "Try Kavach" guide: one-tap demo calls, QR to open on a phone ----
+document.querySelectorAll("[data-demo]").forEach((b) => {
+  b.onclick = () => {
+    if (running) return;
+    setSource("demo");
+    $("demo").value = b.dataset.demo;
+    langSel.value = b.dataset.lang;
+    store.set("kavach.lang", langSel.value);
+    start();
+  };
+});
+function showGuide(show) {
+  $("guide").classList.toggle("hidden", !show);
+  if (!show) window.scrollTo({ top: 0, behavior: "smooth" });
+}
+window.addEventListener("load", () => {
+  if (window.QRCode) new QRCode($("site-qr"), { text: location.origin, width: 148, height: 148 });
+  else $("site-qr").remove();
+});
 
 // ---- Safe reply: read aloud on tap ----
 ui.onReplyPlay(async () => {
