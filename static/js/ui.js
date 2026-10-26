@@ -13,7 +13,9 @@ LANG_NAME["or-IN"] = "Odia";
 const SCAM_LABEL = {
   none: "Looks like a normal call", digital_arrest: "“Digital arrest” scam", kyc_expiry: "Fake KYC / account block",
   fake_officer: "Fake officer / impersonation", otp_request: "OTP theft attempt", parcel_customs: "Fake parcel / customs case",
-  lottery_prize: "Lottery / prize scam", investment: "Investment scam", other: "Suspicious call",
+  lottery_prize: "Lottery / prize scam", investment: "Investment scam", family_emergency: "Fake family emergency",
+  remote_access: "Remote-access / refund scam", electricity_bill: "Fake electricity cut", sim_block: "Fake SIM-block / TRAI",
+  job_task: "Fake job / task scam", wrong_transfer: "“Money sent by mistake” scam", other: "Suspicious call",
 };
 const STAGES = [
   ["contact", "Contact"], ["impersonation", "Fake identity"], ["fear", "Threats"],

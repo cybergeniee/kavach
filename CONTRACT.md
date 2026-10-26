@@ -29,7 +29,7 @@ The call itself can be in any Indian language or a mix; it is auto-detected.
 | `ended` | — | Done; server closes. |
 | `error` | `message`, `fatal` | Show it. |
 
-`scam_type`: `none digital_arrest kyc_expiry fake_officer otp_request parcel_customs lottery_prize investment other`
+`scam_type`: `none digital_arrest kyc_expiry fake_officer otp_request parcel_customs lottery_prize investment family_emergency remote_access electricity_bill sim_block job_task wrong_transfer other`
 `stage`: `none contact impersonation fear isolation payment_demand`
 
 ## `/watch?session=CODE`: family view

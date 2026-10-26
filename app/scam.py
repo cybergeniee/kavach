@@ -13,8 +13,9 @@ LANG_NAMES = {
 }
 
 SCAM_TYPES = [
-    "none", "digital_arrest", "kyc_expiry", "fake_officer", "otp_request",
-    "parcel_customs", "lottery_prize", "investment", "other",
+    "none", "digital_arrest", "kyc_expiry", "fake_officer", "otp_request", "parcel_customs",
+    "lottery_prize", "investment", "family_emergency", "remote_access", "electricity_bill",
+    "sim_block", "job_task", "wrong_transfer", "other",
 ]
 
 # The classic scam script, in order. Shown live as a progress tracker.
@@ -34,7 +35,13 @@ Strong scam signs:
 - Urgency, threats, secrecy ("don't tell anyone").
 - Lottery, prize, refund, or too-good investment returns.
 
-Normal calls (family, friends, delivery confirmations without payment, doctors) should score low.
+Normal calls should score low (0-35). These are NOT scams on their own:
+- Family/friends chatting, or a known family member casually asking for a small amount with no urgency or secrecy.
+- A delivery person AT YOUR DOOR asking for the delivery OTP of a parcel being handed over (normal in India).
+  But an OTP asked over the phone to "cancel", "reschedule", "verify", "refund" or "update" something IS a scam.
+- A bank asking "did you make this transaction?" and offering to block the card, without asking for OTP, PIN, CVV, app installs or money.
+- Bill reminders telling you to pay through the official app, website or office; hospitals, doctors, sales calls that ask for nothing.
+- Real police asking you to come to the police station in person.
 Do not overreact to one neutral sentence. Score high only when the signs are clear.
 Only claiming to be police, CBI, crime branch, a government officer, a bank, courier or company - with no threat,
 secrecy, urgency or request yet - is at most 55. Real officers and banks do call people; the claim alone is not a scam.
@@ -43,7 +50,16 @@ If probability is 40 or more, scam_type must not be "none".
 "stage" is the furthest step of the scam script the caller has reached:
 none (normal call), contact (greeting/confirming identity), impersonation (claims authority or a company),
 fear (threats, case, arrest, account blocked), isolation (secrecy, stay on call, don't tell family),
-payment_demand (asks for OTP, money, app install, card details).
+payment_demand (asks for OTP, PIN, card details, an app install / screen share, or ANY money: fee, fine, deposit,
+investment, "processing charge", refund-back, transfer).
+
+scam_type - pick the most specific:
+digital_arrest (arrest/investigation over phone or video, stay on call), kyc_expiry (KYC/PAN/account blocked),
+fake_officer (police/CBI/officer impersonation not covered above), otp_request (mainly wants an OTP),
+parcel_customs (courier/customs/drugs parcel), lottery_prize (lottery, KBC, prize, gift), investment (stocks, crypto, guaranteed returns),
+family_emergency (relative/friend in accident/jail, send money now), remote_access (AnyDesk/TeamViewer/screen share, refund help),
+electricity_bill (power cut tonight, pay now), sim_block (TRAI/SIM/number will be blocked), job_task (paid likes/tasks, registration fee),
+wrong_transfer ("sent money by mistake, send it back"), other.
 
 Keep "reason" to one short English sentence. "red_flags" are 0-4 very short English phrases.
 "safe_reply" is ONE short, calm sentence the elderly person can say to the caller right now, written in {lang}
