@@ -142,7 +142,7 @@ function onEvent(m) {
     $("code").textContent = m.id;
     $("share-btn").classList.remove("hidden");
   }
-  if (m.type === "ready") setStatus(source === "demo" && !MOCK ? "LIVE · demo call" : "LIVE · listening", "live");
+  if (m.type === "ready") setStatus(source === "demo" && !MOCK ? "Live · demo call" : "Live · listening", "live");
   if (m.type === "analyzing") setStatus("Analyzing call…", "connecting");
   if (m.type === "report") {
     ui.saveHistory();
@@ -193,7 +193,7 @@ function setGo(isRunning) {
   const go = $("go");
   go.disabled = false;
   go.classList.toggle("stop", isRunning);
-  go.innerHTML = isRunning ? "■ Stop & get report" : "🛡 Start listening";
+  go.innerHTML = isRunning ? "Stop and get report" : "Start listening";
 }
 
 $("go").onclick = () => (running ? stop() : start());
@@ -221,7 +221,7 @@ $("share-btn").onclick = () => {
     <h2>Let family watch live</h2>
     <div class="sub">They see the transcript, the risk meter and every alert, in real time.</div>
     <div class="qr" id="qr"></div>
-    <div style="font-size:42px;font-weight:900;letter-spacing:8px;font-family:ui-monospace,Menlo,monospace">${code}</div>
+    <div class="share-code">${code}</div>
     <div class="share-link">${link}</div>
     <div class="row" style="justify-content:center">
       <button class="btn blue" data-a="copy">Copy link</button>

@@ -76,10 +76,10 @@ export function mountDashboard(root, opts = {}) {
   <div class="grid">
     <div class="col">
       <section class="card meter-card">
-        <h3>Scam risk <span class="tag" id="k-updated"></span></h3>
+        <h3>Is this call a scam? <span class="tag" id="k-updated"></span></h3>
         <svg class="gauge" viewBox="0 0 320 180" aria-hidden="true">
-          <path class="track" d="M20 160 A140 140 0 0 1 300 160" fill="none" stroke-width="22" stroke-linecap="round"/>
-          <path class="fill" id="k-arc" d="M20 160 A140 140 0 0 1 300 160" fill="none" stroke-width="22" stroke-linecap="round"
+          <path class="track" d="M20 160 A140 140 0 0 1 300 160" fill="none" stroke-width="18" stroke-linecap="round"/>
+          <path class="fill" id="k-arc" d="M20 160 A140 140 0 0 1 300 160" fill="none" stroke-width="18" stroke-linecap="round"
                 stroke-dasharray="${GAUGE_LEN}" stroke-dashoffset="${GAUGE_LEN}"/>
         </svg>
         <div class="score-num" id="k-score" aria-live="polite">0<small>%</small></div>
@@ -99,7 +99,7 @@ export function mountDashboard(root, opts = {}) {
       <section class="card reply-card hidden" id="k-reply-card">
         <h3>${audience === "family" ? "Kavach is telling her to say" : "Say this to the caller"}</h3>
         <div class="reply-text" id="k-reply"></div>
-        <button class="btn green" id="k-reply-play">🔊 Read it to me</button>
+        <button class="btn green" id="k-reply-play">Read it to me</button>
       </section>
     </div>
 
@@ -121,9 +121,6 @@ export function mountDashboard(root, opts = {}) {
       <section class="card timeline">
         <h3>Risk over the call <span class="tag" id="k-peak"></span></h3>
         <svg viewBox="0 0 600 110" preserveAspectRatio="none" id="k-timeline">
-          <defs><linearGradient id="riskGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#ef4444" stop-opacity=".45"/><stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
-          </linearGradient></defs>
           <line class="grid-line" x1="0" x2="600" y1="33" y2="33"/>
           <line class="grid-line" x1="0" x2="600" y1="66" y2="66"/>
           <path class="area" id="k-area" d=""/>
@@ -170,7 +167,7 @@ export function mountDashboard(root, opts = {}) {
     $("k-arc").setAttribute("stroke-dashoffset", GAUGE_LEN * (1 - p / 100));
     animateNumber($("k-score"), p);
     riskClass(p);
-    $("k-verdict").textContent = p >= 70 ? "⚠ SCAM LIKELY" : p >= 40 ? "Suspicious — be careful" : "Looks safe so far";
+    $("k-verdict").textContent = p >= 70 ? "Scam likely" : p >= 40 ? "Suspicious, be careful" : "Looks safe so far";
     $("k-type").textContent = p >= 40 ? SCAM_LABEL[s.scam_type] || "" : "";
     $("k-reason").textContent = s.reason || "";
     const flags = $("k-flags");
@@ -276,15 +273,15 @@ export function mountDashboard(root, opts = {}) {
     div.className = "alarm";
     div.setAttribute("role", "alertdialog");
     div.innerHTML = `<div class="alarm-inner">
-      <div class="big-icon">🚨</div>
+      <svg class="big-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg>
       <h1>${esc(fam ? "Scam call in progress!" : m.text)}</h1>
       <div class="alarm-en">${fam
         ? `Kavach has already warned her: “${esc(m.text)}”. Call her now.`
         : "This is a fraud call. Do not share any OTP. Do not send money. Cut the call."}</div>
       <div class="alarm-score">Scam risk ${m.probability}% · ${esc(SCAM_LABEL[state.lastScore?.scam_type] || "Scam")}</div>
       <div class="actions">
-        <button class="btn" data-a="ok">${fam ? "OK, calling her" : "✋ I cut the call"}</button>
-        ${m.audio ? `<button class="btn ghost" data-a="replay">🔊 Hear again</button>` : ""}
+        <button class="btn" data-a="ok">${fam ? "OK, calling her" : "I cut the call"}</button>
+        ${m.audio ? `<button class="btn ghost" data-a="replay">Hear it again</button>` : ""}
       </div></div>`;
     div.addEventListener("click", (e) => {
       const a = e.target.closest("button")?.dataset.a;
@@ -330,14 +327,14 @@ export function mountDashboard(root, opts = {}) {
       </div>
       <div class="summary-local">${esc(r.summary_local)}</div>
       <div class="summary-en">${esc(r.summary_en)}</div>
-      <div class="row"><button class="btn green ${r.audio ? "" : "hidden"}" data-a="play" id="k-play-summary">🔊 Play summary</button></div>
+      <div class="row"><button class="btn green ${r.audio ? "" : "hidden"}" data-a="play" id="k-play-summary">Play summary</button></div>
       ${r.next_steps?.length ? `<ul class="steps">${r.next_steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
-      ${scam ? `<div class="helpline"><div><div style="font-size:13px;opacity:.8">National Cyber Crime Helpline</div>
+      ${scam ? `<div class="helpline"><div><div style="font-size:14px;opacity:.7;margin-bottom:6px">National cyber crime helpline</div>
         <div class="num"><a href="tel:1930">1930</a></div></div>
         <div style="flex:1;font-size:14px">Lost money or shared an OTP? Call within the first hour, the “golden hour”, to freeze the money.<br>
-        <a href="https://cybercrime.gov.in" target="_blank" rel="noopener">Report at cybercrime.gov.in →</a></div></div>` : ""}
+        <a href="https://cybercrime.gov.in" target="_blank" rel="noopener">Report at cybercrime.gov.in</a></div></div>` : ""}
       <div class="row">
-        <button class="btn blue" data-a="download">⬇ Download report</button>
+        <button class="btn blue" data-a="download">Download report</button>
         <button class="btn" data-a="whatsapp">Share on WhatsApp</button>
         <button class="btn" data-a="close" style="margin-left:auto">Close</button>
       </div></div>`;
@@ -361,7 +358,7 @@ export function mountDashboard(root, opts = {}) {
   function shareText() {
     const r = state.report || {};
     const s = state.lastScore || {};
-    return `🛡 Kavach call report: ${(r.verdict || "").toUpperCase()} (peak risk ${state.peak}%)\n` +
+    return `Kavach call report: ${(r.verdict || "").toUpperCase()} (peak risk ${state.peak}%)\n` +
       `${SCAM_LABEL[s.scam_type] || ""}\n${r.summary_en || ""}\n` +
       (r.verdict !== "safe" ? "If money or an OTP was shared, call 1930 now / cybercrime.gov.in" : "");
   }
@@ -393,7 +390,7 @@ export function mountDashboard(root, opts = {}) {
   (function draw() {
     const W = canvas.width, H = canvas.height, bars = 48;
     g.clearRect(0, 0, W, H);
-    const color = getComputedStyle(document.body).getPropertyValue("--risk").trim() || "#22c55e";
+    const color = getComputedStyle(document.body).getPropertyValue("--risk").trim() || "#13773c";
     if (analyser) analyser.getByteFrequencyData(freq);
     level *= 0.92;
     for (let i = 0; i < bars; i++) {
@@ -434,7 +431,7 @@ export function mountDashboard(root, opts = {}) {
         break;
       case "analyzing": $("k-verdict").textContent = "Preparing call report…"; break;
       case "report":
-        $("k-verdict").textContent = m.verdict === "scam" ? "⚠ This was a scam call" : m.verdict === "suspicious" ? "Suspicious call" : "✓ Safe call";
+        $("k-verdict").textContent = m.verdict === "scam" ? "This was a scam call" : m.verdict === "suspicious" ? "Suspicious call" : "Safe call";
         showReport(m);
         break;
       case "report_audio": addReportAudio(m.audio); break;

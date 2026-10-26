@@ -23,7 +23,7 @@ function watch(code) {
   if (!ui) ui = mountDashboard($("dashboard"), { audience: "family" });
 
   if (params.has("mock")) {
-    setStatus("LIVE · demo", "live");
+    setStatus("Live · demo", "live");
     runMock((m) => ui.handle(m));
     return;
   }
@@ -41,7 +41,7 @@ function connect(code) {
       ui.reset();
       ui.setLang(m.lang);
       ui.setQuiet(!m.live); // don't fire an old alarm for a call that already ended
-      setStatus(m.live ? "LIVE · watching" : "Call ended", m.live ? "live" : "");
+      setStatus(m.live ? "Live · watching" : "Call ended", m.live ? "live" : "");
       return;
     }
     if (m.type === "error" && !ui.state.sessionId && m.message?.includes("code")) {
@@ -75,7 +75,7 @@ $("join-form").onsubmit = (e) => {
 // Browsers block sound until a tap; one tap here unlocks alert beeps.
 $("sound-btn").onclick = () => {
   try { new AudioContext().resume(); } catch {}
-  $("sound-btn").textContent = "🔔 Alert sound on";
+  $("sound-btn").textContent = "Alert sound on";
 };
 
 if (params.get("code")) watch(params.get("code"));
