@@ -274,3 +274,6 @@ mark { background: #ef444433; color: #fecaca; border-radius: 4px; padding: 0 3px
   .stage { font-size: 10px; }
   .stats { grid-template-columns: 1fr 1fr 1fr; }
 }
+.viz canvas { flex: 1; min-width: 0; }
+@media (max-width: 560px) { .viz { flex-direction: column; align-items: stretch; } .viz .lang { white-space: normal; } }
+html, body { overflow-x: hidden; }
