@@ -51,10 +51,14 @@
 
     <section class="guide" id="guide" aria-labelledby="guide-title">
       <div class="guide-head">
-        <h2 id="guide-title">Try Kavach in one minute</h2>
-        <p>Kavach listens to a phone call and warns an elderly person, out loud and in their own language, the moment the call turns into a scam. Pick any test below.</p>
+        <div>
+          <h2 id="guide-title">Try Kavach in one minute</h2>
+          <p class="guide-intro">Kavach listens to a phone call and warns an elderly person, out loud and in their own language, the moment the call turns into a scam. Pick any test below.</p>
+        </div>
+        <button class="btn guide-toggle" id="guide-toggle" aria-expanded="true" aria-controls="guide-body">Hide guide</button>
       </div>
 
+      <div id="guide-body">
       <div class="guide-grid">
         <div class="card guide-block">
           <h3>Play a recorded call</h3>
@@ -88,6 +92,11 @@
           </div>
           <div class="qr" id="site-qr" aria-label="QR code to open Kavach on a phone"></div>
         </div>
+      </div>
+      <div class="guide-foot">
+        <p>The live dashboard (scam meter, transcript and risk timeline) is right below this guide.</p>
+        <button class="btn blue" id="guide-collapse">Hide guide and show the dashboard</button>
+      </div>
       </div>
     </section>
 

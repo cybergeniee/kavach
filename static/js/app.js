@@ -214,6 +214,17 @@ document.querySelectorAll("[data-demo]").forEach((b) => {
     start();
   };
 });
+function collapseGuide(collapsed, scroll = false) {
+  $("guide").classList.toggle("collapsed", collapsed);
+  $("guide-toggle").textContent = collapsed ? "Show how to try it" : "Hide guide";
+  $("guide-toggle").setAttribute("aria-expanded", String(!collapsed));
+  store.set("kavach.guideCollapsed", collapsed ? "1" : "0");
+  if (scroll) $("guide").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+collapseGuide(store.get("kavach.guideCollapsed", "0") === "1");
+$("guide-toggle").onclick = () => collapseGuide(!$("guide").classList.contains("collapsed"), true);
+$("guide-collapse").onclick = () => collapseGuide(true, true);
+
 function showGuide(show) {
   $("guide").classList.toggle("hidden", !show);
   if (!show) window.scrollTo({ top: 0, behavior: "smooth" });
