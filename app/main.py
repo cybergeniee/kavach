@@ -1,18 +1,22 @@
-"""Kavach server: browser mic -> Sarvam realtime STT -> scam score -> spoken warning."""
+"""Kavach server: browser mic -> Sarvam realtime STT -> scam score -> spoken warning -> report."""
 
 import asyncio
 import base64
 import json
 import os
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from sarvamai import AsyncSarvamAI, RealtimeAudioInput, RealtimeEnd, RealtimePing
 
+from .report import build_report
 from .scam import score_transcript
-from .warning import get_warning
+from .sessions import open_session, sessions
+from .warning import get_warning, normalize_lang, speak, to_english
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -38,7 +42,19 @@ KEYTERMS = json.dumps([
     "UPI", "CVV", "safe account", "arrest warrant", "cyber crime", "Mumbai police",
 ])
 
-app = FastAPI(title="Kavach")
+@asynccontextmanager
+async def lifespan(_app):
+    # Pre-render the Hindi + English warnings so the first alert on stage is instant.
+    client = AsyncSarvamAI(api_subscription_key=API_KEY)
+    for lang in ("hi-IN", "en-IN"):
+        try:
+            await get_warning(client, lang)
+        except Exception:
+            pass
+    yield
+
+
+app = FastAPI(title="Kavach", lifespan=lifespan)
 
 
 @app.get("/health")
@@ -46,10 +62,56 @@ async def health():
     return {"ok": True}
 
 
+class SpeakRequest(BaseModel):
+    text: str
+    lang: str = "hi-IN"
+
+
+@app.post("/api/speak")
+async def speak_text(req: SpeakRequest):
+    """Reads the suggested safe reply aloud, on tap."""
+    client = AsyncSarvamAI(api_subscription_key=API_KEY)
+    try:
+        return {"audio": await speak(client, req.text[:500], req.lang)}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.get("/api/session/{sid}")
+async def session_info(sid: str):
+    s = sessions.get(sid.upper())
+    return {"exists": bool(s), "live": bool(s and s.live), "lang": s.lang if s else None}
+
+
+@app.websocket("/watch")
+async def watch(websocket: WebSocket, session: str = ""):
+    """Family view: mirrors a live call's events."""
+    await websocket.accept()
+    s = sessions.get(session.upper())
+    if not s:
+        await websocket.send_json({"type": "error", "message": "No call with that code."})
+        await websocket.close()
+        return
+    await websocket.send_json({"type": "watching", "session": s.id, "lang": s.lang, "live": s.live})
+    for msg in list(s.history):
+        await websocket.send_json(msg)
+    s.watchers.add(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # keep open; family pings are ignored
+    except Exception:
+        pass
+    finally:
+        s.watchers.discard(websocket)
+
+
 @app.websocket("/ws")
 async def call_stream(websocket: WebSocket, lang: str = "hi-IN"):
     await websocket.accept()
+    lang = normalize_lang(lang)
     client = AsyncSarvamAI(api_subscription_key=API_KEY)
+    session = await open_session(lang)
+    started = time.monotonic()
 
     finals: list[str] = []
     partial = ""
@@ -57,30 +119,42 @@ async def call_stream(websocket: WebSocket, lang: str = "hi-IN"):
     scoring = False
     last_scored_text = ""
     last_partial_score = 0.0
+    last_score: dict | None = None
+    background: set[asyncio.Task] = set()
+
+    def elapsed() -> float:
+        return round(time.monotonic() - started, 1)
 
     async def send(msg: dict):
         try:
             await websocket.send_json(msg)
         except Exception:
             pass
+        await session.publish(msg)
+
+    def spawn(coro):
+        task = asyncio.create_task(coro)
+        background.add(task)
+        task.add_done_callback(background.discard)
 
     async def run_score():
-        nonlocal scoring, warned, last_scored_text
+        nonlocal scoring, warned, last_scored_text, last_score
         text = " ".join(finals[-TRANSCRIPT_WINDOW:] + ([partial] if partial else [])).strip()
         if not text or text == last_scored_text:
             scoring = False
             return
         last_scored_text = text
         try:
-            result = await score_transcript(client, text)
-            await send({"type": "score", **result})
+            result = await score_transcript(client, text, lang)
+            last_score = result
+            await send({"type": "score", "t": elapsed(), **result})
             if result["probability"] >= WARN_AT and not warned:
                 warned = True
                 warning_text, audio = await get_warning(client, lang)
                 await send({"type": "warning", "text": warning_text, "audio": audio,
-                            "probability": result["probability"]})
+                            "probability": result["probability"], "t": elapsed()})
         except Exception as e:
-            await send({"type": "error", "message": f"scoring failed: {e}"})
+            await send({"type": "error", "message": f"scoring failed: {e}", "fatal": False})
         finally:
             scoring = False
 
@@ -93,7 +167,14 @@ async def call_stream(websocket: WebSocket, lang: str = "hi-IN"):
             return
         last_partial_score = now
         scoring = True
-        asyncio.create_task(run_score())
+        spawn(run_score())
+
+    async def translate_line(idx: int, text: str):
+        english = await to_english(client, text)
+        if english and english.strip().lower() != text.strip().lower():
+            await send({"type": "translation", "idx": idx, "text": english})
+
+    await send({"type": "session", "id": session.id, "lang": lang})
 
     try:
         async with client.speech_to_text_realtime_streaming.connect(
@@ -111,13 +192,18 @@ async def call_stream(websocket: WebSocket, lang: str = "hi-IN"):
                 while True:
                     msg = await websocket.receive()
                     if msg["type"] == "websocket.disconnect":
-                        break
+                        return False
                     if msg.get("bytes"):
                         audio = base64.b64encode(msg["bytes"]).decode()
                         await stt.send_realtime_audio_input(RealtimeAudioInput(audio=audio))
-                    elif msg.get("text") and json.loads(msg["text"]).get("type") == "stop":
-                        break
+                    elif msg.get("text"):
+                        try:
+                            if json.loads(msg["text"]).get("type") == "stop":
+                                break
+                        except ValueError:
+                            pass
                 await stt.send_realtime_end(RealtimeEnd())
+                return True
 
             async def sarvam_to_browser():
                 nonlocal partial
@@ -132,11 +218,15 @@ async def call_stream(websocket: WebSocket, lang: str = "hi-IN"):
                         partial = ""
                         if text:
                             finals.append(text)
-                            await send({"type": "final", "text": text})
+                            idx = len(finals) - 1
+                            await send({"type": "final", "idx": idx, "text": text, "t": elapsed(),
+                                        "language": getattr(event, "language", None)})
                             maybe_score(force=True)
+                            spawn(translate_line(idx, text))
                     elif kind == "error":
-                        await send({"type": "error", "message": getattr(event, "message", "STT error")})
-                        if getattr(event, "is_fatal", False):
+                        fatal = bool(getattr(event, "is_fatal", False))
+                        await send({"type": "error", "message": getattr(event, "message", "STT error"), "fatal": fatal})
+                        if fatal:
                             break
                     elif kind == "session.end":
                         break
@@ -150,21 +240,43 @@ async def call_stream(websocket: WebSocket, lang: str = "hi-IN"):
             pinger = asyncio.create_task(keepalive())
             try:
                 await browser_to_sarvam()
-                # Give Sarvam a moment to return the last final transcript.
-                await asyncio.wait_for(reader, timeout=5)
-            except (asyncio.TimeoutError, WebSocketDisconnect):
+                await asyncio.wait_for(reader, timeout=3)  # let the last sentence finalize
+            except (asyncio.TimeoutError, WebSocketDisconnect, RuntimeError):
                 pass
             finally:
                 reader.cancel()
                 pinger.cancel()
+
+        # Post-call report (only if anything was said).
+        if finals:
+            # Let in-flight scoring/translation finish so the report sees the final score.
+            if background:
+                await asyncio.wait(list(background), timeout=4)
+            await send({"type": "analyzing"})
+            try:
+                report = await build_report(client, " ".join(finals), last_score, lang)
+                await send({"type": "report", **report, "duration": elapsed(),
+                            "transcript": finals, "final_score": last_score})
+                # Spoken version follows separately so the report shows up instantly.
+                if report["summary_local"]:
+                    try:
+                        await send({"type": "report_audio", "audio": await speak(client, report["summary_local"], lang)})
+                    except Exception:
+                        pass
+            except Exception as e:
+                await send({"type": "error", "message": f"report failed: {e}", "fatal": False})
+        await send({"type": "ended"})
     except Exception as e:
-        await send({"type": "error", "message": f"speech connection failed: {e}"})
+        await send({"type": "error", "message": f"speech connection failed: {e}", "fatal": True})
     finally:
+        session.live = False
+        for task in list(background):
+            task.cancel()
         try:
             await websocket.close()
         except Exception:
             pass
 
 
-# Frontend (built against CONTRACT.md). Mounted last so /ws and /health win.
+# Frontend. Mounted last so /ws, /watch and /api win.
 app.mount("/", StaticFiles(directory=ROOT / "static", html=True), name="static")
