@@ -36,7 +36,8 @@ Strong scam signs:
 
 Normal calls (family, friends, delivery confirmations without payment, doctors) should score low.
 Do not overreact to one neutral sentence. Score high only when the signs are clear.
-Only claiming to be from a bank, courier or company, with no threat, urgency or request yet, is at most 50.
+Only claiming to be police, CBI, crime branch, a government officer, a bank, courier or company - with no threat,
+secrecy, urgency or request yet - is at most 55. Real officers and banks do call people; the claim alone is not a scam.
 If probability is 40 or more, scam_type must not be "none".
 
 "stage" is the furthest step of the scam script the caller has reached:
@@ -93,13 +94,18 @@ async def score_transcript(client: AsyncSarvamAI, transcript: str, lang: str) ->
     data = parse_json(response.choices[0].message.content)
 
     probability = max(0, min(100, int(data.get("probability", 0))))
+    stage = data.get("stage") if data.get("stage") in STAGES else "none"
+    # Hard rule: an identity claim alone ("I'm from Mumbai crime branch") is never enough to alarm.
+    # The warning needs threats, secrecy, or a demand for OTP/money.
+    if stage in ("none", "contact", "impersonation"):
+        probability = min(probability, 60)
     scam_type = data.get("scam_type") if data.get("scam_type") in SCAM_TYPES else "other"
     if probability >= 40 and scam_type == "none":
         scam_type = "other"
     return {
         "probability": probability,
         "scam_type": scam_type,
-        "stage": data.get("stage") if data.get("stage") in STAGES else "none",
+        "stage": stage,
         "reason": str(data.get("reason", "")),
         "red_flags": [str(f) for f in data.get("red_flags", [])][:4],
         "safe_reply": str(data.get("safe_reply", "")) if probability >= 40 else "",
